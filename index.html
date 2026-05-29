@@ -60,6 +60,7 @@
             text-align: center;
             padding: 0 20px;
             position: relative;
+	    overflow-x: hidden;
         }
         .hero::before {
             content: '';
@@ -67,7 +68,9 @@
             top: -10%;
             left: 50%;
             transform: translateX(-50%);
-            width: 800px;
+            /* 고정 800px 대신 모바일에서는 화면 크기에 맞추고, PC에서는 최대 800px까지만 커지도록 수정 */
+            width: 150vw; 
+            max-width: 800px;
             height: 800px;
             background: radial-gradient(circle, rgba(79, 70, 229, 0.08) 0%, rgba(248, 250, 252, 0) 70%);
             z-index: -1;
