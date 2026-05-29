@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 중고거래 에이전트 - 6단계 시뮬레이션</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    <style>
+        :root {
+            --bg-main: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --accent-start: #4F46E5;
+            --accent-end: #7C3AED;
+            --success: #10B981;
+            --radius-lg: 24px;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'Pretendard', sans-serif;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 추가된 타이틀 영역 스타일 */
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .page-header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin: 0;
+            word-break: keep-all;
+        }
+
+        .demo-container {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 600px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 40px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        /* ---------------- 추가된 판매 성향 선택 UI 스타일 ---------------- */
+        .preference-section {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .preference-label {
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-size: 1.05rem;
+            color: #1E293B;
+        }
+        .preference-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .pref-card {
+            cursor: pointer;
+        }
+        .pref-card input {
+            display: none; /* 라디오 버튼 숨김 */
+        }
+        .pref-content {
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 16px 8px;
+            text-align: center;
+            transition: all 0.2s ease;
+            height: 100%;
+            background: #fff;
+            box-sizing: border-box;
+        }
+        .pref-card input:checked + .pref-content {
+            border-color: var(--accent-start);
+            background: #EEF2FF;
+        }
+        .pref-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .pref-text strong {
+            display: block;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .pref-text span {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            word-break: keep-all;
+            line-height: 1.3;
+        }
+        /* ----------------------------------------------------------- */
+
+        /* 1단계: 업로드 영역 */
+        .upload-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #CBD5E1;
+            border-radius: var(--radius-lg);
+            padding: 50px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #F8FAFC;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-start);
+            background-color: #EEF2FF;
+        }
+
+        .upload-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        #file-input { display: none; }
+
+        /* 로딩 상태 */
+        .loading-state {
+            display: none;
+            padding: 50px 0;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #E2E8F0;
+            border-top-color: var(--accent-start);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px auto;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-weight: 700;
+            color: var(--accent-start);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .loading-subtext {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        /* 결과 화면 */
+        .result-state {
+            display: none;
+            text-align: left;
+        }
+
+        .preview-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-card {
+            background: #F8FAFC;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .result-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            word-break: keep-all;
+        }
+
+        .badge-success {
+            display: inline-block;
+            background: #D1FAE5;
+            color: #065F46;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .desc-box {
+            background: #EEF2FF;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #C7D2FE;
+            margin-bottom: 20px;
+        }
+
+        /* 6단계: 판매 승인 버튼 */
+        .btn-primary {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.3s;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-primary:hover { 
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .btn-secondary:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <h1>솔루션 기능 체험하기</h1>
+        <p>AI 에이전트가 어떻게 상품을 분석하고 가격을 산정하는지 확인해보세요.</p>
+    </div>
+
+    <div class="demo-container">
+        <div id="step-upload">
+            <div class="title">원클릭 AI 판매 접수</div>
+            <div class="subtitle">[1단계] 판매 성향을 선택하고 상품 사진을 업로드하세요.</div>
+            
+            <!-- 판매 성향 선택 UI -->
+            <div class="preference-section">
+                <div class="preference-label">어떤 방식의 거래를 선호하시나요?</div>
+                <div class="preference-grid">
+                    <label class="pref-card">
+                        <input type="radio" name="sell_pref" value="fast">
+                        <div class="pref-content">
+                            <span class="pref-icon">⚡</span>
+                            <div class="pref-text">
+                                <strong>빠른 거래</strong>
+                                <span>조금 싸게 팔아도<br>빨리 처분할래요</span>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="pref-card">
+                        <input type="radio" name="sell_pref" value="normal" checked>
+                        <div class="pref-content">
+                            <span class="pref-icon">⚖️</span>
+                            <div class="pref-text">
+                                <strong>적정 시세</strong>
+                                <span>시장 평균가로<br>무난하게 팔래요</span>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="pref-card">
+                        <input type="radio" name="sell_pref" value="high">
+                        <div class="pref-content">
+                            <span class="pref-icon">💎</span>
+                            <div class="pref-text">
+                                <strong>제값 받기</strong>
+                                <span>오래 걸려도<br>가치를 인정받을래요</span>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 파일 업로드 UI -->
+            <label class="upload-area" for="file-input">
+                <div class="upload-icon">📷</div>
+                <div style="font-weight: 700; color: #1E293B; font-size: 1.1rem;">클릭하여 판매할 상품 이미지 업로드</div>
+                <div style="font-size: 0.9rem; color: #94A3B8; margin-top: 8px;">선택하신 성향에 맞춰 AI 분석이 시작됩니다</div>
+            </label>
+            <input type="file" id="file-input" accept="image/*">
+        </div>
+
+        <div id="step-loading" class="loading-state">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loading-title">AI 모델 분석 중...</div>
+            <div class="loading-subtext" id="loading-desc">시스템 데이터를 연동하고 있습니다.</div>
+        </div>
+
+        <div id="step-result" class="result-state">
+            <div class="title" style="font-size: 1.5rem; margin-bottom: 20px; text-align: center;">[5단계] 분석 결과 반환 완료</div>
+            <img id="preview-image" class="preview-img" src="" alt="미리보기">
+            
+            <div class="result-grid">
+                <div class="result-card">
+                    <div class="result-label">보안 필터링 (2단계)</div>
+                    <div class="result-value"><span class="badge-success">✓ 정상 매물 인증</span></div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">상태 심층 진단 (3단계)</div>
+                    <div class="result-value">전자기기 > 스마트폰<br><span style="font-size: 0.95rem; color: #D97706;">상태: A급 (미세 찍힘)</span></div>
+                </div>
+                <div class="result-card" style="grid-column: span 2;">
+                    <div class="result-label">실시간 시세 결합 예상 가격 (4단계)</div>
+                    <!-- 가격이 동적으로 변경될 부분에 ID 추가 -->
+                    <div class="result-value" id="result-price" style="color: var(--accent-start); font-size: 1.5rem;">780,000원</div>
+                </div>
+            </div>
+
+            <div class="desc-box">
+                <div class="result-label" style="color: var(--accent-start);">생성형 AI 맞춤 상품 문구 (4단계)</div>
+                <!-- 설명이 동적으로 변경될 부분에 ID 추가 -->
+                <p id="result-desc" style="margin: 10px 0 0 0; font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
+                    "스마트폰 A급 기기 판매합니다. AI 검수 결과 기능상 전혀 문제없는 정상 제품이며, 테두리에만 미세한 사용감이 있습니다. 실시간 적정 시세인 78만원에 안전하게 거래하실 분 모십니다."
+                </p>
+            </div>
+
+            <button class="btn-primary" onclick="alert('플랫폼에 상품이 등록되었습니다. 판매 완료 시 자동 정산됩니다.')">
+                [6단계] 판매 승인 및 플랫폼 자동 등록
+            </button>
+            <button class="btn-secondary" onclick="resetDemo()">처음부터 다시 테스트하기</button>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const stepUpload = document.getElementById('step-upload');
+        const stepLoading = document.getElementById('step-loading');
+        const stepResult = document.getElementById('step-result');
+        const previewImage = document.getElementById('preview-image');
+        const loadingTitle = document.getElementById('loading-title');
+        const loadingDesc = document.getElementById('loading-desc');
+        
+        // 결과값을 업데이트할 DOM 요소
+        const resultPrice = document.getElementById('result-price');
+        const resultDesc = document.getElementById('result-desc');
+
+        // 1단계: 이미지 전송 이벤트
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 라디오 버튼 선택값 가져오기
+            const selectedPref = document.querySelector('input[name="sell_pref"]:checked').value;
+
+            // 선택값에 따른 결과 미리 세팅
+            if (selectedPref === 'fast') {
+                resultPrice.innerText = "710,000원";
+                resultDesc.innerText = '"스마트폰 A급 기기 급처분합니다. AI 검수 완료된 정상 제품이나(테두리 미세 사용감 있음), 빠른 거래를 위해 현재 평균 시세보다 7만 원가량 저렴하게 올립니다. 네고는 정중히 사양하며 먼저 연락 주시는 분과 바로 거래하겠습니다."';
+            } else if (selectedPref === 'high') {
+                resultPrice.innerText = "830,000원";
+                resultDesc.innerText = '"스마트폰 A급 기기 판매합니다. AI 정밀 검수를 통과했으며 테두리 미세 찍힘 외에는 매우 양호한 컨디션을 유지하고 있습니다. 중고물품임에도 좋은 상태를 유지하고 있기 때문에, 83만 원에 거래 원합니다."';
+            } else {
+                resultPrice.innerText = "780,000원";
+                resultDesc.innerText = '"스마트폰 A급 기기 판매합니다. AI 검수 결과 기능상 전혀 문제없는 정상 제품이며, 테두리에만 미세한 사용감이 있습니다. 실시간 적정 시세인 78만원에 안전하게 거래하실 분 모십니다."';
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                previewImage.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+
+            // 업로드 화면 숨기고 로딩 화면 표시
+            stepUpload.style.display = 'none';
+            stepLoading.style.display = 'block';
+
+            // 2단계: 허위 매물 차단 프로세스
+            loadingTitle.innerText = "[2단계] 비정상 이미지 필터링 중";
+            loadingDesc.innerText = "허위 매물 및 불량 상품 접수를 사전에 차단합니다.";
+
+            // 3단계: 상태 자동 진단 프로세스 (1.5초 후)
+            setTimeout(() => {
+                loadingTitle.innerText = "[3단계] 비전 AI 상태 심층 분석 중";
+                loadingDesc.innerText = "상품의 종류, 상태, 하자를 자동으로 진단합니다.";
+            }, 1800);
+
+            // 4단계: 시세 분석 및 문구 생성 (3.5초 후)
+            setTimeout(() => {
+                loadingTitle.innerText = "[4단계] 시세 분석 및 문구 생성 중";
+                // 사용자 성향 반영 문구로 변경
+                loadingDesc.innerText = "선택하신 거래 성향을 반영하여 가격 및 문구를 생성합니다.";
+            }, 3600);
+
+            // 5단계: 결과 반환 (5.5초 후 화면 전환)
+            setTimeout(() => {
+                stepLoading.style.display = 'none';
+                stepResult.style.display = 'block';
+            }, 5500);
+        });
+
+        // 초기화 (1단계로 복귀)
+        function resetDemo() {
+            fileInput.value = '';
+            // 라디오 버튼 초기화 (적정 시세로 원복)
+            document.querySelector('input[name="sell_pref"][value="normal"]').checked = true;
+            stepResult.style.display = 'none';
+            stepUpload.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
